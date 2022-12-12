@@ -112,7 +112,7 @@ int main (int argc, char **argv) {
             
             unsigned long long int pos_ant = 0;
             for(unsigned long long int i=0; i<=strlen(buffer); i++){
-                if(buffer[i] == ' ' || buffer[i] == '\0'){
+                if(buffer[i] == ' ' || buffer[i] == '\n' || buffer[i] == '\0'){
                     unsigned long long int size_w = i - pos_ant - 1;    
 
                     if(!size_w){

@@ -1,24 +1,22 @@
 #include "common.c"
 #include <unistd.h>
-#include <sys/time.h>
 
-#define ARR_SIZE(arr) ( sizeof((arr)) / sizeof((arr[0])) )
-
-double calc_time(__time_t sec_ini, __time_t sec_end, __suseconds_t usec_ini, __suseconds_t usec_end){
-	return (sec_end + (double) usec_end/1000000) - (sec_ini + (double) usec_ini/1000000);
+FILE * open_file(char *path) {
+    FILE *f= fopen(path, "r");
+    if(!f){
+  		return NULL;
+	}
+    return f;
 }
 
 int main (int argc, char **argv) {
-    rd_kafka_t *producer, *solver;
-    rd_kafka_conf_t *conf, *solver_conf;
-    rd_kafka_resp_err_t err;
-    char errstr[512];
-
-    // Parse the command line.
+    // Verify arguments
     if (argc != 4) {
-        g_error("Usage: %s configFile.ini fileName.txt num_msgs (default 0)\n", argv[0]);
+        g_error("Usage: %s config.ini fileName.txt num_msgs (default 0)\n", argv[0]);
         return 1;
     }
+
+    char errstr[512];
 
     // Parse the configuration.
     // See https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md
@@ -31,13 +29,9 @@ int main (int argc, char **argv) {
         return 1;
     }
 
-    // Load the relevant configuration sections.
-    conf = rd_kafka_conf_new();
+    // Configuration sections for Producer.
+    rd_kafka_conf_t *conf = rd_kafka_conf_new();
     load_config_group(conf, key_file, "default");
-
-    solver_conf = rd_kafka_conf_new();
-    load_config_group(solver_conf, key_file, "default");
-    load_config_group(solver_conf, key_file, "solver");
 
     // Install a delivery-error callback.
     rd_kafka_conf_set_dr_msg_cb(conf, dr_msg_cb);
@@ -47,14 +41,18 @@ int main (int argc, char **argv) {
             return 1;
     }
 
-    // Create the Producer instance.
-    producer = rd_kafka_new(RD_KAFKA_PRODUCER, conf, errstr, sizeof(errstr));
+    // Make Producer instance.
+    rd_kafka_t *producer = rd_kafka_new(RD_KAFKA_PRODUCER, conf, errstr, sizeof(errstr));
     if (!producer) {
         g_error("Failed to create new producer: %s", errstr);
         return 1;
     }
 
-    solver = rd_kafka_new(RD_KAFKA_CONSUMER, solver_conf, errstr, sizeof(errstr));
+    rd_kafka_conf_t *solver_conf = rd_kafka_conf_new();
+    load_config_group(solver_conf, key_file, "default");
+    load_config_group(solver_conf, key_file, "solver");
+
+    rd_kafka_t *solver = rd_kafka_new(RD_KAFKA_CONSUMER, solver_conf, errstr, sizeof(errstr));
     if (!solver) {
         g_error("Failed to create new solver: %s", errstr);
         return 1;
@@ -71,7 +69,7 @@ int main (int argc, char **argv) {
     rd_kafka_topic_partition_list_add(subscription, responseTopic, RD_KAFKA_PARTITION_UA);
 
     // Subscribe to the list of topics.
-    err = rd_kafka_subscribe(solver, subscription);
+    rd_kafka_resp_err_t err = rd_kafka_subscribe(solver, subscription);
     if (err) {
         g_error("Failed to subscribe to %d topics: %s", subscription->cnt, rd_kafka_err2str(err));
         rd_kafka_topic_partition_list_destroy(subscription);
@@ -82,43 +80,38 @@ int main (int argc, char **argv) {
     rd_kafka_topic_partition_list_destroy(subscription);
 
     
-    FILE *names = fopen(argv[2], "r");
+    FILE *file;
+    if(!(file = open_file(argv[2]))) {
+        g_error("Can't onpen the file: %s", argv[2]);
+        return 1;
+    }
 
     int message_count = atoi(argv[3]);
-
-    message_count = (!message_count) ? 1 : message_count;
-
-  	if(!names){
-        g_error("Can't onpen the file: %s", argv[2]);
-  		return 1;
-	}
+    message_count = !message_count ? 1 : message_count;
 
     // Define o tamanho total do arquivo
-    fseek(names, 0, SEEK_END);
-    unsigned long long int file_size = ftell(names);
-    fseek(names, 0, SEEK_SET);
+    fseek(file, 0, SEEK_END);
+    unsigned long long int file_size = ftell(file);
+    fseek(file, 0, SEEK_SET);
 
-    struct timeval total_ini, total_end;
     unsigned long long int n = 0, n_l_six = 0, n_g_six = 0, pos_ant = 0;
 
     const char *topic = "count-words";
     const char *key =  "message";
 
-    gettimeofday(&total_ini, NULL);
     for (unsigned long long int i = 0; i < message_count; i++) {
 
-        //Divide o arquivo conforme a quantidade de msgs
-        // TO DO: resolver o problema do lixo de memória em msg vazias
+        // Divide o arquivo conforme a quantidade de mensagens
         
         unsigned long long int relative_pos = pos_ant + file_size/message_count;
 
         relative_pos = (relative_pos > file_size) ? file_size : relative_pos;
 
-        fseek(names, relative_pos, SEEK_SET);
+        fseek(file, relative_pos, SEEK_SET);
 
         if(relative_pos != file_size){
             int k=0;
-            while(!feof(names) && fgetc(names) != ' ') k++;
+            while(!feof(file) && fgetc(file) != ' ') k++;
             relative_pos+=k;
         }        
 
@@ -126,17 +119,15 @@ int main (int argc, char **argv) {
 
         char *buffer = malloc(buffer_size + 1);
 
-        fseek(names, pos_ant, SEEK_SET);
+        fseek(file, pos_ant, SEEK_SET);
 
         for(unsigned long long int j = 0; j < buffer_size; j++){
-            buffer[j] = fgetc(names);
+            buffer[j] = fgetc(file);
         }
 
         buffer[buffer_size] = '\0';     
         
-        pos_ant = ftell(names) + 1;
-
-        //g_message("msg: '%s'", buffer);
+        pos_ant = ftell(file) + 1;
 
         rd_kafka_resp_err_t err;      
         err = rd_kafka_producev(producer,
@@ -160,7 +151,7 @@ int main (int argc, char **argv) {
     for(int i = 0; i < message_count; ){
         rd_kafka_message_t *response;
 
-        response = rd_kafka_consumer_poll(solver, 500);
+        response = rd_kafka_consumer_poll(solver, 1000);
 
         if (!response){
             g_message("Waiting Response...");
@@ -187,9 +178,8 @@ int main (int argc, char **argv) {
         // Free the message when we're done.
         rd_kafka_message_destroy(response);
     }
-    gettimeofday(&total_end, NULL);
 
-    fclose(names);
+    fclose(file);
 
     // Block until the messages are all sent.
     g_message("Flushing final messages..");
@@ -210,9 +200,7 @@ int main (int argc, char **argv) {
     // Destroy the solver.
     rd_kafka_destroy(solver);
 
-    double duration = calc_time(total_ini.tv_sec, total_end.tv_sec, total_ini.tv_usec, total_end.tv_usec);
-
-    g_message("[%.8lf s] Total de %llu palavras: %llu menores de 6 bytes e %llu entre 6 e 10 bytes", duration, n, n_l_six, n_g_six);
+    g_message("Total de palavras: %llu\nTotal de palavras menores de 6 caracteres: %llu \nTotal de palavras entre 6 e 10 caracteres %llu ", n, n_l_six, n_g_six);
 
     return 0;
 }

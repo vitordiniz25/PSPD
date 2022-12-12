@@ -19,6 +19,7 @@ int main (int argc, char **argv) {
     FILE * f;
     f = fopen("test.txt", "at");
 
+    printf("Esperados\n");
     printf("TOTAL: %d\n", (less_than_six+between_six_ten+more_ten));
     printf("less six: %d\n", less_than_six);
     printf("between six ten: %d\n", between_six_ten);
@@ -42,11 +43,9 @@ int main (int argc, char **argv) {
             }
         }
         str[strlen(str)-1] = '\0';
-        printf("%s*\n", str);
         fprintf(f,"%s\n",str);
     }
     fclose(f);
     free(str);
-    
 return 0;
 }

@@ -1,6 +1,11 @@
 #include <glib.h>
 #include <librdkafka/rdkafka.h>
 
+#define true 1
+#define false 0
+
+typedef int bool;
+
 /* Optional per-message delivery callback (triggered by poll() or flush())
  * when a message has been successfully delivered or permanently
  * failed delivery (after retries).
