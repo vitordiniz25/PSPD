@@ -96,7 +96,11 @@ int main (int argc, char **argv) {
         }
 
         if (consumer_message->err) {
-            if (consumer_message->err != RD_KAFKA_RESP_ERR__PARTITION_EOF) { //it just means we've read everything and are waiting for more data.
+            if (consumer_message->err == RD_KAFKA_RESP_ERR__PARTITION_EOF) {
+                /* We can ignore this error - it just means we've read
+                 * everything and are waiting for more data.
+                 */
+            } else {
                 g_message("Consumer error: %s", rd_kafka_message_errstr(consumer_message));
                 return 1;
             }
