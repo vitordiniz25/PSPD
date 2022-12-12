@@ -17,7 +17,7 @@ int main (int argc, char **argv) {
 
     // Parse the command line.
     if (argc != 2) {
-        g_error("Usage: %s <config.ini>", argv[0]);
+        g_error("Usage: %s config.ini", argv[0]);
         return 1;
     }
 
@@ -84,23 +84,19 @@ int main (int argc, char **argv) {
     const char *responseTopic = "count-words-results";
     const char *key = "response";
 
-    int n = 0, n_l_six = 0, n_g_six = 0;
+    unsigned long long int total = 0, less_than_six = 0, between_six_ten = 0;
     // Start polling for messages.
     while (run) {
         rd_kafka_message_t *consumer_message;
 
-        consumer_message = rd_kafka_consumer_poll(worker, 500);
+        consumer_message = rd_kafka_consumer_poll(worker, 2000);
         if (!consumer_message) {
             g_message("Waiting...");
             continue;
         }
 
         if (consumer_message->err) {
-            if (consumer_message->err == RD_KAFKA_RESP_ERR__PARTITION_EOF) {
-                /* We can ignore this error - it just means we've read
-                 * everything and are waiting for more data.
-                 */
-            } else {
+            if (consumer_message->err != RD_KAFKA_RESP_ERR__PARTITION_EOF) { //it just means we've read everything and are waiting for more data.
                 g_message("Consumer error: %s", rd_kafka_message_errstr(consumer_message));
                 return 1;
             }
@@ -108,27 +104,29 @@ int main (int argc, char **argv) {
             g_message("Consumed event from topic %s: counting...", rd_kafka_topic_name(consumer_message->rkt));
 
             char *buffer = (char*) consumer_message->payload;
-            //g_message("msg: '%s'", buffer);
             
             unsigned long long int pos_ant = 0;
             for(unsigned long long int i=0; i<=strlen(buffer); i++){
-                if(buffer[i] == ' ' || buffer[i] == '\n' || buffer[i] == '\0'){
+                if(buffer[i] == ' ' || buffer[i] == '\0'){
                     unsigned long long int size_w = i - pos_ant - 1;    
 
                     if(!size_w){
                         pos_ant = i+1;
                         continue;
                     }
-                    else if(size_w < 6) n_l_six++;
-                    else if(size_w < 10) n_g_six++;
+                    else if(size_w < 6) 
+                        less_than_six++;
+                    else if(size_w < 10) 
+                        between_six_ten++;
 
                     pos_ant = i+1;
-                    n++;
+                    total++;
                 }
             }
-
-            g_message("%d palavras: %d menores que 6 bytes e %d entre 6 e 10 bytes.", n, n_l_six, n_g_six);
-            int res[3] = {n, n_l_six, n_g_six};
+            g_message("Total de palavras: %llu\n", total);
+            g_message("Total de palavras menores de 6 caracteres: %llu", less_than_six);
+            g_message("Total de palavras entre 6 e 10 caracteres %llu\n",between_six_ten);
+            int res[3] = {total, less_than_six, between_six_ten};
 
             //publish results
             rd_kafka_resp_err_t err;      
@@ -143,13 +141,12 @@ int main (int argc, char **argv) {
             if (err) {
                 g_error("Failed to produce to topic %s: %s", responseTopic, rd_kafka_err2str(err));
                 return 1;
-            } else {
-                g_message("Response sent to topic %s!", responseTopic);
             }
+            g_message("Response sent to topic %s!", responseTopic);
 
             rd_kafka_poll(responser, 0);
 
-            n = 0, n_l_six = 0, n_g_six = 0;
+            total = 0, less_than_six = 0, between_six_ten = 0;
         }
 
         // Free the message when we're done.

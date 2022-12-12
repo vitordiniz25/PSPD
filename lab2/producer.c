@@ -68,7 +68,7 @@ int main (int argc, char **argv) {
     rd_kafka_topic_partition_list_t *subscription = rd_kafka_topic_partition_list_new(1);
     rd_kafka_topic_partition_list_add(subscription, responseTopic, RD_KAFKA_PARTITION_UA);
 
-    // Subscribe to the list of topics.
+    // Subscribe to the list of Current number of topics.
     rd_kafka_resp_err_t err = rd_kafka_subscribe(solver, subscription);
     if (err) {
         g_error("Failed to subscribe to %d topics: %s", subscription->cnt, rd_kafka_err2str(err));
@@ -79,30 +79,30 @@ int main (int argc, char **argv) {
 
     rd_kafka_topic_partition_list_destroy(subscription);
 
-    
+    // Open file readonly
     FILE *file;
     if(!(file = open_file(argv[2]))) {
         g_error("Can't onpen the file: %s", argv[2]);
         return 1;
     }
 
+    // Define message counter
     int message_count = atoi(argv[3]);
     message_count = !message_count ? 1 : message_count;
 
     // Define o tamanho total do arquivo
     fseek(file, 0, SEEK_END);
     unsigned long long int file_size = ftell(file);
+    // voltar a posicao inicial do arquivo
     fseek(file, 0, SEEK_SET);
-
-    unsigned long long int n = 0, n_l_six = 0, n_g_six = 0, pos_ant = 0;
 
     const char *topic = "count-words";
     const char *key =  "message";
 
-    for (unsigned long long int i = 0; i < message_count; i++) {
+    unsigned long long int pos_ant = 0;
 
+    for (unsigned long long int i = 0; i < message_count; i++) {
         // Divide o arquivo conforme a quantidade de mensagens
-        
         unsigned long long int relative_pos = pos_ant + file_size/message_count;
 
         relative_pos = (relative_pos > file_size) ? file_size : relative_pos;
@@ -141,37 +141,30 @@ int main (int argc, char **argv) {
         if (err) {
             g_error("Failed to produce to topic %s: %s", topic, rd_kafka_err2str(err));
             return 1;
-        } else {
-            g_message("Produced event to topic %s: mensage %llu sent!", topic, i+1);
         }
-
+        g_message("Produced event to topic %s: mensage %llu sent!", topic, i+1);
         rd_kafka_poll(producer, 0);
     }
 
+    unsigned long long int total = 0, less_than_six = 0, between_six_ten = 0;
+
     for(int i = 0; i < message_count; ){
-        rd_kafka_message_t *response;
-
-        response = rd_kafka_consumer_poll(solver, 1000);
-
+        rd_kafka_message_t *response = rd_kafka_consumer_poll(solver, 2000);
         if (!response){
             g_message("Waiting Response...");
             continue;
         }
 
         if (response->err) {
-            if (response->err == RD_KAFKA_RESP_ERR__PARTITION_EOF) {
-                /* We can ignore this error - it just means we've read
-                 * everything and are waiting for more data.
-                 */
-            } else {
+            if (response->err != RD_KAFKA_RESP_ERR__PARTITION_EOF) { // it just means we've read everything and are waiting for more data.
                 g_message("Response error: %s", rd_kafka_message_errstr(response));
                 return 1;
             }
         } else {
             int *res = response->payload;
-            n += res[0];
-            n_l_six += res[1];
-            n_g_six += res[2];
+            total += res[0];
+            less_than_six += res[1];
+            between_six_ten += res[2];
             i++;
         }
 
@@ -200,7 +193,9 @@ int main (int argc, char **argv) {
     // Destroy the solver.
     rd_kafka_destroy(solver);
 
-    g_message("Total de palavras: %llu\nTotal de palavras menores de 6 caracteres: %llu \nTotal de palavras entre 6 e 10 caracteres %llu ", n, n_l_six, n_g_six);
+    g_message("Total de palavras: %llu\n", total);
+    g_message("Total de palavras menores de 6 caracteres: %llu", less_than_six);
+    g_message("Total de palavras entre 6 e 10 caracteres %llu\n",between_six_ten);
 
     return 0;
 }

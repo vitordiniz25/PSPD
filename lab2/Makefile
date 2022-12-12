@@ -13,12 +13,8 @@ producer:
 consumer:
 	gcc consumer.c -o consumer $(CFLAGS) $(LDLIBS)
 
-file_gen:
-	gcc file_gen.c -o file_gen
-
-example: producer file_gen
-	./file_gen 50 70 20
+example: producer
 	./producer config.ini test.txt 0
 
 rm:
-	rm producer consumer file_gen test.txt
+	rm producer consumer
