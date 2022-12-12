@@ -63,7 +63,7 @@ int main (int argc, char **argv) {
     res_conf = NULL;
 
     // Convert the list of topics to a format suitable for librdkafka.
-    const char *topic = "names-count";
+    const char *topic = "count-words";
     rd_kafka_topic_partition_list_t *subscription = rd_kafka_topic_partition_list_new(1);
     rd_kafka_topic_partition_list_add(subscription, topic, RD_KAFKA_PARTITION_UA);
 
@@ -81,8 +81,8 @@ int main (int argc, char **argv) {
     // Install a signal handler for clean shutdown.
     signal(SIGINT, stop);
 
-    const char *responseTopic = "names-count-result";
-    const char *key = "res";
+    const char *responseTopic = ""count-words-results;
+    const char *key = "response";
 
     int n = 0, n_l_six = 0, n_g_six = 0;
     // Start polling for messages.

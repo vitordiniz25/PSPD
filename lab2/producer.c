@@ -16,7 +16,7 @@ int main (int argc, char **argv) {
 
     // Parse the command line.
     if (argc != 4) {
-        g_error("Usage: %s configFile.ini fileName.txt num_msgs (default 0)", argv[0]);
+        g_error("Usage: %s configFile.ini fileName.txt num_msgs (default 0)\n", argv[0]);
         return 1;
     }
 
@@ -66,7 +66,7 @@ int main (int argc, char **argv) {
     solver_conf = NULL;
 
      // Convert the list of topics to a format suitable for librdkafka.
-    const char *responseTopic = "names-count-result";
+    const char *responseTopic = "count-words-results";
     rd_kafka_topic_partition_list_t *subscription = rd_kafka_topic_partition_list_new(1);
     rd_kafka_topic_partition_list_add(subscription, responseTopic, RD_KAFKA_PARTITION_UA);
 
@@ -101,8 +101,8 @@ int main (int argc, char **argv) {
     struct timeval total_ini, total_end;
     unsigned long long int n = 0, n_l_six = 0, n_g_six = 0, pos_ant = 0;
 
-    const char *topic = "names-count";
-    const char *key =  "msg";
+    const char *topic = "count-words";
+    const char *key =  "message";
 
     gettimeofday(&total_ini, NULL);
     for (unsigned long long int i = 0; i < message_count; i++) {

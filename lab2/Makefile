@@ -1,9 +1,7 @@
 CFLAGS=-Wall $(shell pkg-config --cflags glib-2.0 rdkafka)
 LDLIBS=$(shell pkg-config --libs glib-2.0 rdkafka)
 
-
-
-ALL: producer consumer generator
+start: producer consumer
 
 broker:
 	docker compose up -d --wait
@@ -15,8 +13,11 @@ producer:
 consumer:
 	gcc consumer.c -o consumer $(CFLAGS) $(LDLIBS)
 
-generator:
-	gcc gerador.c -o generator
+file_gen:
+	gcc file_gen.c -o file_gen
 
-clear:
-	rm producer consumer generator
+example: producer file_gen
+	./file_gen 20 30 40
+
+rm:
+	rm producer consumer file_gen test.txt
