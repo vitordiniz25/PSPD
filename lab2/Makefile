@@ -17,7 +17,8 @@ file_gen:
 	gcc file_gen.c -o file_gen
 
 example: producer file_gen
-	./file_gen 20 30 40
+	./file_gen 50 70 20
+	./producer config.ini test.txt 0
 
 rm:
 	rm producer consumer file_gen test.txt

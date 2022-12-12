@@ -81,7 +81,7 @@ int main (int argc, char **argv) {
     // Install a signal handler for clean shutdown.
     signal(SIGINT, stop);
 
-    const char *responseTopic = ""count-words-results;
+    const char *responseTopic = "count-words-results";
     const char *key = "response";
 
     int n = 0, n_l_six = 0, n_g_six = 0;
