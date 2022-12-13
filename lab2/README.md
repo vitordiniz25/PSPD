@@ -54,3 +54,30 @@ Apos isso, projeto devera rodar e retornar:
 # remove todos os binarios gerados 
 make rm
 ```
+
+## Exemplo de execucao
+
+Terminal do consumer: 
+
+```shell
+# pressuponde que ja tenha feito as configuracoes do projeto
+./consumer config.ini 
+```
+
+Terminal do producer:
+
+```shell
+# pressuponde que ja tenha feito as configuracoes do projeto
+./producer config.ini test2.txt 4
+
+# Poderia ser tambem, enviando apenas uma mensagem
+# ./producer config.ini test2.txt 
+```
+
+Exemplo de resposta esperada:
+
+```
+** Message: 22:13:59.203: Total de palavras: 14
+** Message: 22:13:59.203: Total de palavras menores de 6 caracteres: 2
+** Message: 22:13:59.203: Total de palavras entre 6 e 10 caracteres 1
+```
