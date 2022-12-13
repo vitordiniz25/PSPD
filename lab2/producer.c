@@ -11,8 +11,8 @@ FILE * open_file(char *path) {
 
 int main (int argc, char **argv) {
     // Verify arguments
-    if (argc != 4) {
-        g_error("Usage: %s config.ini fileName.txt num_msgs (default 0)\n", argv[0]);
+    if (argc < 3 || argc > 4) {
+        g_error("Usage: %s config.ini file_name.txt num_msgs(not necessary)\n", argv[0]);
         return 1;
     }
 
@@ -87,8 +87,7 @@ int main (int argc, char **argv) {
     }
 
     // Define message counter
-    int message_count = atoi(argv[3]);
-    message_count = !message_count ? 1 : message_count;
+    int message_count = argc == 3 ? 1: atoi(argv[3]);
 
     // Define o tamanho total do arquivo
     fseek(file, 0, SEEK_END);

@@ -5,7 +5,7 @@ start: producer consumer
 
 broker:
 	docker compose up -d --wait
-	./create_topics.sh
+	./make_topics.sh
 
 producer:
 	gcc producer.c -o producer $(CFLAGS) $(LDLIBS)
