@@ -1,5 +1,4 @@
 dep:
-	sudo apt install python3
 	sudo apt install python3-pip
 	python3 -m pip install mpi4py
 	

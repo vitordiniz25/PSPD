@@ -39,8 +39,13 @@ if rank == 0:
     arq_buffer = arq.read()
     arq.close()
     print(f'Arquivo possui {len(arq_buffer)} bytes.')
-    partes = wrap(arq_buffer, (len(arq_buffer) // (num_proc)))
-    print(wrap(arq_buffer, (len(arq_buffer) // (num_proc))))
+    partes = []
+    size = (len(arq_buffer) // (num_proc))
+    if size % 2 == 0:
+        partes = wrap(arq_buffer, (size))
+    else: 
+        partes = wrap(arq_buffer, (size + 1))
+        
     for i in range(1, num_proc):
         print(f'Mestre enviou {len(partes[i])} bytes para o escravo {i}')
         comm.send(partes[i], dest=i, tag=2)
