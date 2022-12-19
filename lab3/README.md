@@ -41,7 +41,8 @@ Após, cada um dos processos faz as contabilizações relacionadas ao problema p
 ## Opinião Geral:
 
 Vitor:
-Achei esse experimento bem interessante, pois ao mesmo que é possível criar e testar aplicações distribuídas usando o padrão MPI, o experimento permite que a gente percebe algumas limitações que essa abordagem possui.
+Achei esse experimento bem interessante, pois ao mesmo que é possível criar e testar aplicações distribuídas usando o padrão MPI, o experimento permite que a gente percebe algumas limitações que essa abordagem possui. Infelizmente, tivemos diversas dificuldades em realizar a implementação em C, e devido à isso, decidimos usar o python já que existe uma familiaridade maior da dupla com esse linguagem. Outro fator negativo encontrado foi que não atingimos um resultado esperado em termos de performance. Ao utilizar mais workers, maior é o tempo de execução, fato contrário ao o que era esperado.
+Possivelmente nossa abordagem não foi satisfatória devido ao resultado negativo da solução.
 
 Natanael:
 Tive uma esperiencia bem frustrante com esse trabalho, tentei de varias formas em fazer a aplicacao rodar em C, entretanto nao conseguia entender corretamente como funcionava, optamos em fazer em python apenas para demonstrar o quao poderoso pode ser o MPI, embora nao vi resultados satisfatorios rodando o projeto, talvez a forma como foi implementado nao foi satisfatoria, o que acarretou em um pior resultado em execuções com maior numero de processos.
